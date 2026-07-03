@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // חייב להיות זהה ל-ADMIN_EMAILS בקובץ firebase-config.js
+    function isAdmin() {
+      return signedIn() && request.auth.token.email in [
+        'teenovationsderot@gmail.com',
+        'ori432777@gmail.com'
+      ];
+    }
+
+    match /topics/{topicId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.authorEmail == request.auth.token.email;
+
+      // נוער: הצבעות ומוני תגובות בלבד. מנהלים: הכל (כולל סטטוס).
+      allow update: if isAdmin()
+        || (signedIn()
+            && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['voters', 'commentsCount', 'chatCount']));
+
+      allow delete: if isAdmin();
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if signedIn()
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 300;
+        allow delete: if isAdmin();
+      }
+
+      match /chat/{msgId} {
+        allow read: if true;
+        allow create: if signedIn()
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 4000;
+        allow delete: if isAdmin();
+      }
+    }
+  }
+}

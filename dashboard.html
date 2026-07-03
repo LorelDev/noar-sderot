@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0d13">
+<title>נוער שדרות · דשבורד יחידת הנוער</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="dash">
+  <header class="topbar">
+    <div>
+      <h1>דשבורד יחידת הנוער</h1>
+      <p class="sub">שדרות · מעקב נושאים, הצבעות והתייעצויות</p>
+    </div>
+    <div class="auth-area" id="authArea"></div>
+  </header>
+
+  <div id="gate" class="gate" hidden></div>
+
+  <div id="dashContent" hidden>
+    <div class="kpis">
+      <div class="kpi"><b id="kTopics">0</b><span>נושאים פתוחים</span></div>
+      <div class="kpi"><b id="kVotes">0</b><span>הצבעות בעד</span></div>
+      <div class="kpi"><b id="kComments">0</b><span>תגובות</span></div>
+      <div class="kpi"><b id="kChats">0</b><span>התייעצויות עם היועץ</span></div>
+      <div class="kpi"><b id="kWeek">0</b><span>נושאים חדשים השבוע</span></div>
+    </div>
+
+    <h2 class="dash-section">הנושאים המובילים בהצבעות</h2>
+    <div class="bars" id="bars"></div>
+
+    <h2 class="dash-section">כל הנושאים</h2>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>נושא</th>
+            <th>הצבעות</th>
+            <th class="hide-m">תגובות</th>
+            <th class="hide-m">התייעצויות</th>
+            <th>סטטוס</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="store.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
