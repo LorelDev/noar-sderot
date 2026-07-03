@@ -1,0 +1,19 @@
+{
+  "name": "נוער שדרות",
+  "short_name": "נוער שדרות",
+  "description": "הרעיונות של הנוער, העיר של כולם",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "he",
+  "background_color": "#07080d",
+  "theme_color": "#07080d",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

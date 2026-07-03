@@ -10,11 +10,14 @@ let chat = [];
 let sortBy = 'top';
 let unsubComments = null;
 let unsubChat = null;
+let loaded = false;
 
 const esc = (s) =>
   String(s || '').replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
 const votesOf = (t) => (t.voters || []).length;
 const votedBy = (t) => user && (t.voters || []).includes(user.email);
+const isStaff = (email) => ADMIN_EMAILS.includes(email);
+const officialTag = '<span class="official">יחידת הנוער</span>';
 
 const STATUS_COLORS = { 'חדש': 'st-new', 'בטיפול': 'st-progress', 'אושר': 'st-ok', 'נדחה': 'st-no' };
 
@@ -27,13 +30,13 @@ function toast(msg) {
   toastT = setTimeout(() => (t.hidden = true), 2800);
 }
 
-/* ─── התחברות ─── */
+/* ─── התחברות והיררכיה ─── */
 Store.onAuth((u) => {
   user = u;
-  isAdmin = !!u && ADMIN_EMAILS.includes(u.email);
+  isAdmin = !!u && isStaff(u.email);
   renderAuth();
   renderList();
-  if (openId) renderTopic();
+  if (openId) renderTopicHead();
 });
 
 function renderAuth() {
@@ -44,8 +47,12 @@ function renderAuth() {
     return;
   }
   area.innerHTML = `
-    ${isAdmin ? '<a class="btn-dash" href="dashboard.html">דשבורד</a>' : ''}
-    ${user.photo ? `<img class="user-photo" src="${esc(user.photo)}" alt="">` : `<span class="user-photo user-initial">${esc(user.name[0])}</span>`}
+    ${isAdmin ? '<a class="btn-dash" href="dashboard.html">דשבורד ניהול</a>' : ''}
+    <span class="user-chip">
+      ${user.photo ? `<img class="user-photo" src="${esc(user.photo)}" alt="">` : `<span class="user-initial">${esc(user.name[0])}</span>`}
+      <span class="user-name">${esc(user.name)}</span>
+      ${isAdmin ? '<span class="role-chip">מנהל</span>' : ''}
+    </span>
     <button class="btn-logout" id="logoutBtn">יציאה</button>`;
   $('#logoutBtn').addEventListener('click', () => Store.logout());
 }
@@ -59,15 +66,67 @@ function requireLogin() {
   return false;
 }
 
-/* ─── נתונים ─── */
+/* ─── נתונים חיים ─── */
 Store.onTopics((list) => {
   topics = list;
+  loaded = true;
   renderList();
+  renderStats();
+  renderLeaders();
   if (openId) renderTopicHead();
 });
 
+/* ─── סטטיסטיקות עם ספירה עולה ─── */
+const statPrev = { topics: 0, votes: 0, comments: 0 };
+function renderStats() {
+  const totals = {
+    topics: topics.length,
+    votes: topics.reduce((a, t) => a + votesOf(t), 0),
+    comments: topics.reduce((a, t) => a + (t.commentsCount || 0), 0),
+  };
+  Object.entries(totals).forEach(([key, val]) => {
+    const el = document.querySelector(`[data-stat="${key}"]`);
+    if (!el) return;
+    const from = statPrev[key];
+    statPrev[key] = val;
+    if (from === val) { el.textContent = val; return; }
+    const t0 = performance.now();
+    const dur = 700;
+    (function tick(now) {
+      const p = Math.min(1, (now - t0) / dur);
+      el.textContent = Math.round(from + (val - from) * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  });
+}
+
+/* ─── מובילים ─── */
+function renderLeaders() {
+  const top = [...topics].sort((a, b) => votesOf(b) - votesOf(a)).slice(0, 3);
+  $('#leaders').innerHTML = top.length
+    ? top
+        .map(
+          (t, i) => `
+      <div class="leader" data-open="${t.id}">
+        <span class="leader-rank">${i + 1}</span>
+        <span class="leader-title">${esc(t.title)}</span>
+        <span class="leader-votes">${votesOf(t)} בעד</span>
+      </div>`
+        )
+        .join('')
+    : '<p class="no-comments">ברגע שיהיו נושאים — הם יופיעו כאן.</p>';
+}
+
 /* ─── רשימה ─── */
+function metaLine(t) {
+  return `
+    <span class="status ${STATUS_COLORS[t.status] || 'st-new'}">${esc(t.status || 'חדש')}</span>
+    ${isStaff(t.authorEmail) ? officialTag : ''}
+    <b>${esc(t.authorName)}</b> · ${relTime(t.createdAt)} · ${t.commentsCount || 0} תגובות`;
+}
+
 function renderList() {
+  if (!loaded) return;
   const sorted = [...topics].sort((a, b) =>
     sortBy === 'top' ? votesOf(b) - votesOf(a) : (b.createdAt || 0) - (a.createdAt || 0)
   );
@@ -83,15 +142,12 @@ function renderList() {
         <div class="topic-main">
           <h2>${esc(t.title)}</h2>
           ${t.body ? `<p>${esc(t.body)}</p>` : ''}
-          <div class="topic-meta">
-            <span class="status ${STATUS_COLORS[t.status] || 'st-new'}">${esc(t.status || 'חדש')}</span>
-            <b>${esc(t.authorName)}</b> · ${esc(t.hood || 'שדרות')} · ${relTime(t.createdAt)} · ${t.commentsCount} תגובות
-          </div>
+          <div class="topic-meta">${metaLine(t)}</div>
         </div>
       </article>`;
         })
         .join('')
-    : '<p class="no-comments">עוד אין נושאים. פתחו את הראשון.</p>';
+    : '<p class="no-comments">עוד אין נושאים. פתחו את הראשון — זה לוקח חצי דקה.</p>';
 }
 
 /* ─── נושא בודד ─── */
@@ -103,10 +159,7 @@ function renderTopicHead() {
     <div class="detail">
       <h2>${esc(t.title)}</h2>
       ${t.body ? `<p class="body">${esc(t.body)}</p>` : ''}
-      <div class="topic-meta">
-        <span class="status ${STATUS_COLORS[t.status] || 'st-new'}">${esc(t.status || 'חדש')}</span>
-        <b>${esc(t.authorName)}</b> · ${esc(t.hood || 'שדרות')} · ${relTime(t.createdAt)}
-      </div>
+      <div class="topic-meta">${metaLine(t)}</div>
       <button class="vote ${voted ? 'voted' : ''}" data-vote="${t.id}">
         <span class="arrow"></span><b>${votesOf(t)}</b><small>${voted ? 'הצבעת בעד' : 'מצביעים בעד'}</small>
       </button>
@@ -117,7 +170,15 @@ function renderComments() {
   $('#commentsHead').textContent = comments.length ? `תגובות (${comments.length})` : 'תגובות';
   $('#commentList').innerHTML = comments.length
     ? comments
-        .map((c) => `<div class="comment"><b>${esc(c.author)}</b><p>${esc(c.text)}</p><small>${relTime(c.createdAt)}</small></div>`)
+        .map((c) => {
+          const staff = isStaff(c.email);
+          return `
+      <div class="comment ${staff ? 'comment-official' : ''}">
+        <div class="comment-author"><b>${esc(c.author)}</b>${staff ? officialTag : ''}</div>
+        <p>${esc(c.text)}</p>
+        <small>${relTime(c.createdAt)}</small>
+      </div>`;
+        })
         .join('')
     : '<p class="no-comments">עוד אין תגובות. תהיו ראשונים.</p>';
 }
@@ -135,14 +196,8 @@ function renderChat(thinking) {
       )
       .join('') +
     (thinking ? '<div class="bubble bubble-bot bubble-thinking"><b>היועץ</b><p>חושב...</p></div>' : '') ||
-    '<p class="no-comments">אף אחד עוד לא התייעץ על הרעיון הזה.</p>';
+    '<p class="no-comments">אף אחד עוד לא התייעץ על הנושא הזה. תהיו ראשונים.</p>';
   thread.scrollTop = thread.scrollHeight;
-}
-
-function renderTopic() {
-  renderTopicHead();
-  renderComments();
-  renderChat();
 }
 
 function showTopic(id) {
@@ -170,7 +225,7 @@ function showList() {
   window.scrollTo(0, 0);
 }
 
-/* ─── קליקים: הצבעה ופתיחה ─── */
+/* ─── קליקים ─── */
 document.addEventListener('click', (e) => {
   const voteBtn = e.target.closest('[data-vote]');
   if (voteBtn) {
@@ -179,11 +234,14 @@ document.addEventListener('click', (e) => {
     Store.toggleVote(voteBtn.dataset.vote, user.email);
     return;
   }
+  const leader = e.target.closest('[data-open]');
+  if (leader) { showTopic(leader.dataset.open); return; }
   const card = e.target.closest('.topic');
   if (card) showTopic(card.dataset.id);
 });
 
 $('#backBtn').addEventListener('click', showList);
+$('#heroHow').addEventListener('click', () => $('#howCard').scrollIntoView({ behavior: 'smooth', block: 'center' }));
 
 document.querySelectorAll('.sort').forEach((b) =>
   b.addEventListener('click', () => {
@@ -204,13 +262,15 @@ $('#commentForm').addEventListener('submit', (e) => {
   $('#commentInput').value = '';
 });
 
-/* ─── נושא חדש ─── */
-$('#newBtn').addEventListener('click', () => {
+/* ─── נושא חדש (גם מנהלים פותחים) ─── */
+function openNewSheet() {
   if (!requireLogin()) return;
   $('#backdrop').hidden = false;
   $('#newSheet').hidden = false;
   $('#newTitle').focus();
-});
+}
+$('#heroNew').addEventListener('click', openNewSheet);
+$('#fab').addEventListener('click', openNewSheet);
 $('#backdrop').addEventListener('click', () => {
   $('#backdrop').hidden = true;
   $('#newSheet').hidden = true;
@@ -225,11 +285,12 @@ $('#newForm').addEventListener('submit', (e) => {
     authorName: user.name,
     authorEmail: user.email,
     hood: 'שדרות',
-  });
+  })
+    .then(() => toast('הנושא פורסם'))
+    .catch(() => toast('הפרסום נכשל, נסו שוב'));
   $('#newForm').reset();
   $('#backdrop').hidden = true;
   $('#newSheet').hidden = true;
-  toast('הנושא פורסם');
 });
 
 /* ─── היועץ ─── */
@@ -253,7 +314,7 @@ $('#chatForm').addEventListener('submit', async (e) => {
   await Store.addChat(openId, { role: 'bot', name: 'היועץ', text: answer });
 });
 
-/* יועץ בסיסי — עובד בלי API, מסכם את מה שכולם אמרו */
+/* יועץ בסיסי — מסכם את מה שכולם אמרו על הנושא */
 function localAdvisor(t, comments, chat, q) {
   const votes = votesOf(t);
   const pts = comments.slice(-4).map((c) => '- ' + c.author + ': "' + c.text + '"').join('\n');
@@ -276,14 +337,14 @@ function localAdvisor(t, comments, chat, q) {
   );
 }
 
-/* יועץ חכם — Claude API עם הקשר מלא של הרעיון */
+/* יועץ חכם — Claude API עם הקשר מלא */
 async function aiAdvisor(t, comments, chat, q) {
   const context =
-    'הרעיון: ' + t.title + '\n' +
+    'הנושא: ' + t.title + '\n' +
     (t.body ? 'תיאור: ' + t.body + '\n' : '') +
     'סטטוס: ' + (t.status || 'חדש') + ' | הצבעות בעד: ' + votesOf(t) + '\n\n' +
-    'תגובות מהקהילה:\n' + (comments.map((c) => c.author + ': ' + c.text).join('\n') || 'אין') + '\n\n' +
-    'התייעצויות קודמות על הרעיון הזה:\n' +
+    'תגובות מהקהילה:\n' + (comments.map((c) => c.author + (isStaff(c.email) ? ' (יחידת הנוער)' : '') + ': ' + c.text).join('\n') || 'אין') + '\n\n' +
+    'התייעצויות קודמות על הנושא הזה:\n' +
     (chat.slice(-16).map((m) => (m.role === 'bot' ? 'היועץ' : m.name) + ': ' + m.text).join('\n') || 'אין') +
     '\n\nהשאלה החדשה של ' + user.name + ': ' + q;
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -300,7 +361,7 @@ async function aiAdvisor(t, comments, chat, q) {
       system:
         'אתה "היועץ" — יועץ חדשנות לבני נוער בשדרות שמקדמים רעיונות לשיפור העיר. ' +
         'ענה בעברית, קצר וענייני (עד 6 משפטים), בלי אימוג\'ים. ' +
-        'התבסס על ההקשר: התגובות וההתייעצויות של כל המשתמשים על הרעיון הזה. ' +
+        'התבסס על ההקשר: התגובות וההתייעצויות של כל המשתמשים על הנושא הזה. ' +
         'תן צעדים מעשיים וספציפיים לנוער מול עירייה, תקציבים וגיוס חברים. אל תמציא עובדות או התחייבויות של העירייה.',
       messages: [{ role: 'user', content: context }],
     }),
