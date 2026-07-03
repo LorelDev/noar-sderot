@@ -78,8 +78,9 @@ textarea{resize:none}
 @keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
 
 /* ═══ פריסה ═══ */
-.layout{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 clamp(12px,4vw,48px) 80px;display:grid;grid-template-columns:1fr;gap:26px}
+.layout{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 clamp(12px,4vw,48px) 80px;display:grid;grid-template-columns:minmax(0,1fr);gap:26px}
 @media(min-width:1020px){.layout{grid-template-columns:minmax(0,1fr) 322px;align-items:start}}
+.feed,.detail-col{min-width:0}
 
 /* ═══ קומפוזר — כמו רשת חברתית ═══ */
 .composer{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 16px;box-shadow:var(--shadow);margin-bottom:14px}

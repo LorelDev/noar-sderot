@@ -1,12 +1,12 @@
 /* נוער שדרות · Service Worker — התקנה כאפליקציה + עבודה ברשת חלשה */
-const CACHE = 'noar-v5';
+const CACHE = 'noar-v6';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=5',
-  './app.js',
-  './store.js',
-  './firebase-config.js',
+  './styles.css?v=6',
+  './app.js?v=6',
+  './store.js?v=6',
+  './firebase-config.js?v=6',
   './manifest.json',
   './icon.svg',
 ];
@@ -25,7 +25,7 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-/* רשת קודם, נפילה לקאש — כך עדכונים מגיעים מיד והאפליקציה שורדת אופליין */
+/* רשת קודם, נפילה לקאש — עדכונים מגיעים מיד והאפליקציה שורדת אופליין */
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
