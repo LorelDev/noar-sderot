@@ -246,22 +246,75 @@ textarea{resize:none}
 .footer a:hover{color:var(--navy)}
 
 /* ═══ מובייל — אפליקציה ═══ */
+.tabbar{display:none}
 @media(max-width:760px){
-  .hero{padding-top:28px;text-align:right}
-  .hero-sub{margin-inline:0}
-  .hero-actions{display:none}
-  .stats{justify-content:flex-start;gap:20px}
+  html,body{overscroll-behavior-y:none;-webkit-text-size-adjust:100%}
+  button,a{touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  .fab{display:none}
   .brand-text{font-size:16px}
   .user-name{display:none}
-  .layout{padding-bottom:110px}
+  .auth-area .btn-dash{display:none}
+
+  /* הירו הופך לפס נתונים קומפקטי */
+  .hero{padding:12px 14px 4px}
+  .hero-kicker,.hero h1,.hero-sub,.hero-actions{display:none}
+  .hero::after{display:none}
+  .stats{margin-top:0;justify-content:space-between;gap:8px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:11px 18px;box-shadow:var(--shadow)}
+  .stat b{font-size:22px}
+  .stat span{font-size:11px}
+  .stat-sep{height:30px}
+
+  .layout{padding:10px 12px calc(96px + env(safe-area-inset-bottom));gap:18px}
   .post-inner{padding:14px 15px 10px}
-  .comment-form{position:sticky;bottom:0;background:linear-gradient(0deg,var(--bg) 75%,transparent);padding:12px 0 16px;margin-top:6px}
+  .pact{font-size:12.5px;padding:10px 2px}
+  .composer{padding:11px 13px}
+  .feed-head{gap:8px}
+  .search-wrap{max-width:none}
+  .side{display:none}
+  .detail-layout .side,#view-topic .advisor-col{display:block}
+
+  /* מסך פוסט — כמו דחיפת מסך באפליקציה */
+  #view-topic{animation:pushIn .32s cubic-bezier(.2,.8,.25,1)}
+  @keyframes pushIn{from{transform:translateX(-26px);opacity:0}to{transform:none;opacity:1}}
+  .detail-layout{padding-top:14px}
+  .comment-form{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom));background:linear-gradient(0deg,var(--bg) 78%,transparent);padding:12px 0 10px;margin-top:6px}
   .advisor .comment-form{position:static;background:none;padding:0}
+  .toast{bottom:calc(86px + env(safe-area-inset-bottom))}
+
+  /* טאב-בר תחתון */
+  .tabbar{position:fixed;bottom:0;inset-inline:0;z-index:48;display:flex;align-items:stretch;justify-content:space-around;
+    background:rgba(255,255,255,.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border-top:1px solid var(--line);padding:7px 6px calc(7px + env(safe-area-inset-bottom));
+    box-shadow:0 -6px 24px rgba(35,42,92,.08)}
+  .tabbtn{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;font-weight:600;color:var(--faint);padding:3px 6px;border-radius:12px;flex:1;transition:color .15s,transform .1s}
+  .tabbtn:active{transform:scale(.92)}
+  .tabbtn.active{color:var(--blue)}
+  .tabbtn.active svg{stroke-width:2.3}
+  .tab-plus{flex:0 0 auto;margin-top:-24px}
+  .tab-plus span{width:54px;height:54px;border-radius:18px;background:var(--grad);color:#fff;display:grid;place-items:center;box-shadow:0 8px 22px rgba(43,57,144,.45);border:4px solid #fff}
 }
 @media(display-mode:standalone){
   .nav{padding-top:env(safe-area-inset-top);height:calc(var(--nav-h) + env(safe-area-inset-top))}
-  .fab{bottom:calc(22px + env(safe-area-inset-bottom))}
 }
+
+/* ═══ פרופיל (שיט) ═══ */
+.profile-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.profile-avatar{width:60px;height:60px;border-radius:50%;overflow:hidden;background:var(--grad);color:#fff;display:grid;place-items:center;font-weight:600;font-size:24px;flex-shrink:0}
+.profile-avatar img{width:100%;height:100%;object-fit:cover}
+.profile-head b{font-size:17px;display:flex;align-items:center;gap:8px}
+.profile-head small{color:var(--muted);font-size:13px;display:block}
+.profile-stats{display:flex;gap:10px;margin-bottom:16px}
+.profile-stat{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.profile-stat b{font-family:var(--disp);font-size:22px;display:block;color:var(--navy)}
+.profile-stat span{font-size:11.5px;color:var(--muted)}
+.profile-menu{display:flex;flex-direction:column;gap:8px}
+.profile-item{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:13px 16px;font-size:14.5px;font-weight:600;text-align:start;transition:.15s;width:100%}
+.profile-item:active{transform:scale(.98);background:var(--bg)}
+.profile-item svg{color:var(--blue);flex-shrink:0}
+.profile-item.danger{color:#c22733}
+.profile-item.danger svg{color:#c22733}
+.profile-login{text-align:center;padding:16px 0 6px}
+.profile-login p{color:var(--muted);font-size:14px;margin-bottom:16px}
 
 /* ═══ דשבורד ═══ */
 .dash{max-width:1040px;margin:0 auto;padding:0 clamp(16px,4vw,40px) 60px}

@@ -404,10 +404,92 @@ function openNewSheet() {
 $('#heroNew').addEventListener('click', openNewSheet);
 $('#composerBtn').addEventListener('click', openNewSheet);
 $('#fab').addEventListener('click', openNewSheet);
-$('#backdrop').addEventListener('click', () => {
+$('#backdrop').addEventListener('click', closeSheets);
+function closeSheets() {
   $('#backdrop').hidden = true;
   $('#newSheet').hidden = true;
-});
+  $('#profileSheet').hidden = true;
+}
+
+/* ─── טאב-בר (מובייל) ─── */
+function setTab(name) {
+  document.querySelectorAll('.tabbtn').forEach((b) =>
+    b.classList.toggle('active', b.dataset.tab === name)
+  );
+}
+document.querySelectorAll('.tabbtn').forEach((btn) =>
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    if (tab === 'new') { openNewSheet(); return; }
+    if (tab === 'profile') { openProfile(); return; }
+    closeSheets();
+    if (tab === 'home') filterCat = 'הכל';
+    if (tab === 'saved') { if (!requireLogin()) return; filterCat = 'שמורים'; }
+    if (tab === 'mine') { if (!requireLogin()) return; filterCat = 'שלי'; }
+    setTab(tab);
+    renderCatBar();
+    if (openId) showList();
+    else { renderList(); window.scrollTo({ top: 0, behavior: 'instant' }); }
+  })
+);
+
+/* ─── פרופיל ─── */
+function openProfile() {
+  const box = $('#profileContent');
+  if (!user) {
+    box.innerHTML = `
+      <div class="profile-login">
+        <h2>מתחברים ומשתתפים</h2>
+        <p>כניסה עם חשבון Google — בלי סיסמאות ובלי הרשמה.</p>
+        <button class="btn-primary" id="profileLogin">כניסה עם Google</button>
+      </div>`;
+    $('#profileLogin').addEventListener('click', () => { closeSheets(); doLogin(); });
+  } else {
+    const mine = topics.filter((t) => t.authorEmail === user.email);
+    const myVotes = topics.filter((t) => votedBy(t)).length;
+    const mySaved = topics.filter((t) => savedBy(t)).length;
+    box.innerHTML = `
+      <div class="profile-head">
+        <span class="profile-avatar">${user.photo ? `<img src="${esc(user.photo)}" alt="">` : esc(user.name[0])}</span>
+        <div>
+          <b>${esc(user.name)} ${isAdmin ? '<span class="role-chip">מנהל</span>' : ''}</b>
+          <small>${esc(user.email)}</small>
+        </div>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-stat"><b>${mine.length}</b><span>פוסטים</span></div>
+        <div class="profile-stat"><b>${myVotes}</b><span>הצבעות</span></div>
+        <div class="profile-stat"><b>${mySaved}</b><span>שמורים</span></div>
+      </div>
+      <div class="profile-menu">
+        ${isAdmin ? `<a class="profile-item" href="dashboard.html">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none"><rect x="3" y="3" width="8" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="3" width="8" height="6" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="11" width="8" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="15" width="8" height="6" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>
+          דשבורד ניהול יחידת הנוער</a>` : ''}
+        <button class="profile-item" data-profile-go="שלי">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none"><path d="M4 6h16M4 12h16M4 18h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          הפוסטים שלי</button>
+        <button class="profile-item" data-profile-go="שמורים">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4-6 4V4a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          פוסטים שמורים</button>
+        <button class="profile-item danger" id="profileLogout">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none"><path d="M9 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3M15 8l4 4-4 4M19 12H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          יציאה מהחשבון</button>
+      </div>`;
+    $('#profileLogout').addEventListener('click', () => { closeSheets(); Store.logout(); setTab('home'); filterCat = 'הכל'; renderCatBar(); renderList(); });
+    document.querySelectorAll('[data-profile-go]').forEach((b) =>
+      b.addEventListener('click', () => {
+        filterCat = b.dataset.profileGo;
+        closeSheets();
+        setTab(filterCat === 'שלי' ? 'mine' : 'saved');
+        renderCatBar();
+        if (openId) showList(); else renderList();
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      })
+    );
+  }
+  $('#backdrop').hidden = false;
+  $('#profileSheet').hidden = false;
+}
 $('#newForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const title = $('#newTitle').value.trim();
