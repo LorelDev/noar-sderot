@@ -94,7 +94,7 @@ function render() {
     .map(
       (t) => `
     <tr>
-      <td class="t-title">${esc(t.title)}<small>${esc(t.authorName)} · ${esc(t.hood || 'שדרות')} · ${relTime(t.createdAt)}</small></td>
+      <td class="t-title">${esc(t.title)}<small>${esc(t.authorName)} · ${esc(t.category || 'אחר')} · ${relTime(t.createdAt)}</small></td>
       <td class="tbl-num">${votesOf(t)}</td>
       <td class="tbl-num hide-m">${t.commentsCount || 0}</td>
       <td class="tbl-num hide-m">${t.chatCount || 0}</td>

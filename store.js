@@ -60,6 +60,13 @@ const Store = {
       });
     });
   },
+  toggleSave(id, email, isSaved) {
+    return _topics().doc(id).update({
+      savers: isSaved
+        ? firebase.firestore.FieldValue.arrayRemove(email)
+        : firebase.firestore.FieldValue.arrayUnion(email),
+    });
+  },
   onComments(id, cb) {
     return _topics().doc(id).collection('comments').orderBy('createdAt')
       .onSnapshot((s) => cb(s.docs.map((d) => d.data())));

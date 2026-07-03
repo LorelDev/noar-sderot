@@ -23,11 +23,11 @@ service cloud.firestore {
         && request.resource.data.title.size() <= 120
         && request.resource.data.authorEmail == request.auth.token.email;
 
-      // נוער: הצבעות ומוני תגובות בלבד. מנהלים: הכל (כולל סטטוס).
+      // נוער: הצבעות, שמירות ומוני תגובות בלבד. מנהלים: הכל (כולל סטטוס).
       allow update: if isAdmin()
         || (signedIn()
             && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['voters', 'commentsCount', 'chatCount']));
+               .hasOnly(['voters', 'savers', 'commentsCount', 'chatCount']));
 
       allow delete: if isAdmin();
 

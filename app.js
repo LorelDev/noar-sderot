@@ -1,4 +1,4 @@
-/* נוער שדרות · אפליקציה ראשית */
+/* נוער שדרות · הרשת החברתית של הרעיונות */
 const $ = (s) => document.querySelector(s);
 
 let user = null;
@@ -7,19 +7,36 @@ let topics = [];
 let openId = null;
 let comments = [];
 let chat = [];
-let sortBy = 'top';
+let sortBy = 'hot';
+let filterCat = 'הכל';
+let searchQ = '';
+let newCat = 'אחר';
 let unsubComments = null;
 let unsubChat = null;
 let loaded = false;
+let deepLinked = false;
+
+const CATEGORIES = ['אירועים', 'ספורט', 'תרבות', 'חינוך', 'סביבה', 'תשתיות', 'אחר'];
+const AVATAR_COLORS = ['#2b3990', '#e63946', '#1e8c46', '#0f7fae', '#7a2f7d', '#b47d00'];
 
 const esc = (s) =>
   String(s || '').replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
 const votesOf = (t) => (t.voters || []).length;
 const votedBy = (t) => user && (t.voters || []).includes(user.email);
+const savedBy = (t) => user && (t.savers || []).includes(user.email);
 const isStaff = (email) => ADMIN_EMAILS.includes(email);
 const officialTag = '<span class="official">יחידת הנוער</span>';
+const catOf = (t) => t.category || 'אחר';
+const avatarColor = (name) => AVATAR_COLORS[(String(name || 'א').charCodeAt(0) || 0) % AVATAR_COLORS.length];
 
 const STATUS_COLORS = { 'חדש': 'st-new', 'בטיפול': 'st-progress', 'אושר': 'st-ok', 'נדחה': 'st-no' };
+
+const ICONS = {
+  up: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none"><path d="M12 4 4 14h5v6h6v-6h5L12 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  chat: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none"><path d="M21 12a8 8 0 0 1-8 8H4l1.7-3.4A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  share: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none"><circle cx="6" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="5.5" r="2.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="18.5" r="2.6" stroke="currentColor" stroke-width="1.8"/><path d="m8.4 10.8 6.8-4M8.4 13.2l6.8 4" stroke="currentColor" stroke-width="1.8"/></svg>',
+  save: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4-6 4V4a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+};
 
 let toastT;
 function toast(msg) {
@@ -35,6 +52,8 @@ Store.onAuth((u) => {
   user = u;
   isAdmin = !!u && isStaff(u.email);
   renderAuth();
+  renderComposer();
+  renderCatBar();
   renderList();
   if (openId) renderTopicHead();
 });
@@ -57,6 +76,15 @@ function renderAuth() {
   $('#logoutBtn').addEventListener('click', () => Store.logout());
 }
 
+function renderComposer() {
+  const av = $('#composerAvatar');
+  if (user && user.photo) av.innerHTML = `<img src="${esc(user.photo)}" alt="">`;
+  else av.textContent = user ? user.name[0] : '?';
+  $('#composerBtn').textContent = user
+    ? `מה הרעיון שלך, ${user.name.split(' ')[0]}?`
+    : 'מה הרעיון שלך לשדרות?';
+}
+
 function doLogin() {
   Store.login().catch(() => toast('ההתחברות נכשלה, נסו שוב'));
 }
@@ -74,9 +102,14 @@ Store.onTopics((list) => {
   renderStats();
   renderLeaders();
   if (openId) renderTopicHead();
+  if (!deepLinked && location.hash.startsWith('#t=')) {
+    deepLinked = true;
+    const id = location.hash.slice(3);
+    if (topics.some((t) => t.id === id)) showTopic(id);
+  }
 });
 
-/* ─── סטטיסטיקות עם ספירה עולה ─── */
+/* ─── סטטיסטיקות ─── */
 const statPrev = { topics: 0, votes: 0, comments: 0 };
 function renderStats() {
   const totals = {
@@ -91,9 +124,8 @@ function renderStats() {
     statPrev[key] = val;
     if (from === val) { el.textContent = val; return; }
     const t0 = performance.now();
-    const dur = 700;
     (function tick(now) {
-      const p = Math.min(1, (now - t0) / dur);
+      const p = Math.min(1, (now - t0) / 700);
       el.textContent = Math.round(from + (val - from) * (1 - Math.pow(1 - p, 3)));
       if (p < 1) requestAnimationFrame(tick);
     })(t0);
@@ -114,55 +146,102 @@ function renderLeaders() {
       </div>`
         )
         .join('')
-    : '<p class="no-comments">ברגע שיהיו נושאים — הם יופיעו כאן.</p>';
+    : '<p class="no-comments">ברגע שיהיו פוסטים — הם יופיעו כאן.</p>';
 }
 
-/* ─── רשימה ─── */
-function metaLine(t) {
+/* ─── סרגל קטגוריות ─── */
+function renderCatBar() {
+  const chips = ['הכל', ...CATEGORIES];
+  if (user) chips.push('שלי', 'שמורים');
+  $('#catBar').innerHTML = chips
+    .map((c) => `<button class="cat-chip ${c === filterCat ? 'active' : ''}" data-cat="${c}">${c}</button>`)
+    .join('');
+}
+
+/* ─── פיד ─── */
+function visibleTopics() {
+  let list = [...topics];
+  if (filterCat === 'שלי') list = list.filter((t) => user && t.authorEmail === user.email);
+  else if (filterCat === 'שמורים') list = list.filter((t) => savedBy(t));
+  else if (filterCat !== 'הכל') list = list.filter((t) => catOf(t) === filterCat);
+  if (searchQ) list = list.filter((t) => (t.title + ' ' + (t.body || '') + ' ' + t.authorName).includes(searchQ));
+  return list.sort((a, b) =>
+    sortBy === 'hot' ? votesOf(b) - votesOf(a)
+    : sortBy === 'talked' ? (b.commentsCount || 0) - (a.commentsCount || 0)
+    : (b.createdAt || 0) - (a.createdAt || 0)
+  );
+}
+
+function avatarHtml(t) {
+  return t.authorPhoto
+    ? `<span class="pavatar"><img src="${esc(t.authorPhoto)}" alt=""></span>`
+    : `<span class="pavatar" style="background:${avatarColor(t.authorName)}">${esc((t.authorName || 'א')[0])}</span>`;
+}
+
+function postHead(t) {
   return `
-    <span class="status ${STATUS_COLORS[t.status] || 'st-new'}">${esc(t.status || 'חדש')}</span>
-    ${isStaff(t.authorEmail) ? officialTag : ''}
-    <b>${esc(t.authorName)}</b> · ${relTime(t.createdAt)} · ${t.commentsCount || 0} תגובות`;
+    <header class="post-head">
+      ${avatarHtml(t)}
+      <div class="post-who">
+        <div class="post-name">${esc(t.authorName)} ${isStaff(t.authorEmail) ? officialTag : ''}</div>
+        <div class="post-sub">${relTime(t.createdAt)} · <span class="cat cat-${catOf(t)}">${catOf(t)}</span> · <span class="status ${STATUS_COLORS[t.status] || 'st-new'}">${esc(t.status || 'חדש')}</span></div>
+      </div>
+    </header>`;
+}
+
+function actionsBar(t) {
+  const voted = votedBy(t);
+  const saved = savedBy(t);
+  return `
+    <footer class="post-actions">
+      <button class="pact pact-vote ${voted ? 'on' : ''}" data-vote="${t.id}">${ICONS.up}<b>${votesOf(t)}</b> בעד</button>
+      <button class="pact" data-comments="${t.id}">${ICONS.chat}<b>${t.commentsCount || 0}</b> תגובות</button>
+      <button class="pact" data-share="${t.id}">${ICONS.share} שיתוף</button>
+      <button class="pact ${saved ? 'on' : ''}" data-save="${t.id}">${ICONS.save} ${saved ? 'נשמר' : 'שמירה'}</button>
+    </footer>`;
 }
 
 function renderList() {
   if (!loaded) return;
-  const sorted = [...topics].sort((a, b) =>
-    sortBy === 'top' ? votesOf(b) - votesOf(a) : (b.createdAt || 0) - (a.createdAt || 0)
-  );
-  $('#topicList').innerHTML = sorted.length
-    ? sorted
-        .map((t) => {
-          const voted = votedBy(t);
-          return `
-      <article class="topic" data-id="${t.id}">
-        <button class="vote ${voted ? 'voted' : ''}" data-vote="${t.id}" aria-label="הצבעה בעד">
-          <span class="arrow"></span><b>${votesOf(t)}</b><small>בעד</small>
-        </button>
-        <div class="topic-main">
-          <h2>${esc(t.title)}</h2>
-          ${t.body ? `<p>${esc(t.body)}</p>` : ''}
-          <div class="topic-meta">${metaLine(t)}</div>
+  const list = visibleTopics();
+  $('#topicList').innerHTML = list.length
+    ? list
+        .map(
+          (t) => `
+      <article class="post" data-id="${t.id}">
+        <div class="post-inner" data-open-post="${t.id}">
+          ${postHead(t)}
+          <h2 class="post-title">${esc(t.title)}</h2>
+          ${t.body ? `<p class="post-body">${esc(t.body)}</p>` : ''}
         </div>
-      </article>`;
-        })
+        ${actionsBar(t)}
+      </article>`
+        )
         .join('')
-    : '<p class="no-comments">עוד אין נושאים. פתחו את הראשון — זה לוקח חצי דקה.</p>';
+    : `<p class="no-comments">${
+        filterCat === 'שלי' ? 'עוד לא פרסמתם פוסט. זה הזמן.' :
+        filterCat === 'שמורים' ? 'אין פוסטים שמורים. לחצו "שמירה" על פוסט כדי לחזור אליו.' :
+        searchQ ? 'לא נמצא כלום. נסו חיפוש אחר.' :
+        'עוד אין פוסטים בקטגוריה הזו. פתחו את הראשון.'
+      }</p>`;
 }
 
-/* ─── נושא בודד ─── */
+/* ─── פוסט בודד ─── */
 function renderTopicHead() {
   const t = topics.find((x) => x.id === openId);
   if (!t) return;
   const voted = votedBy(t);
+  const saved = savedBy(t);
   $('#topicDetail').innerHTML = `
     <div class="detail">
-      <h2>${esc(t.title)}</h2>
+      ${postHead(t)}
+      <h2 class="post-title">${esc(t.title)}</h2>
       ${t.body ? `<p class="body">${esc(t.body)}</p>` : ''}
-      <div class="topic-meta">${metaLine(t)}</div>
-      <button class="vote ${voted ? 'voted' : ''}" data-vote="${t.id}">
-        <span class="arrow"></span><b>${votesOf(t)}</b><small>${voted ? 'הצבעת בעד' : 'מצביעים בעד'}</small>
-      </button>
+      <div class="detail-actions">
+        <button class="vote-big ${voted ? 'voted' : ''}" data-vote="${t.id}">${ICONS.up}<b>${votesOf(t)}</b> ${voted ? 'הצבעת בעד' : 'מצביעים בעד'}</button>
+        <button class="vote-big" data-share="${t.id}">${ICONS.share} שיתוף</button>
+        <button class="vote-big ${saved ? 'voted' : ''}" data-save="${t.id}">${ICONS.save} ${saved ? 'נשמר' : 'שמירה'}</button>
+      </div>
     </div>`;
 }
 
@@ -196,12 +275,13 @@ function renderChat(thinking) {
       )
       .join('') +
     (thinking ? '<div class="bubble bubble-bot bubble-thinking"><b>היועץ</b><p>חושב...</p></div>' : '') ||
-    '<p class="no-comments">אף אחד עוד לא התייעץ על הנושא הזה. תהיו ראשונים.</p>';
+    '<p class="no-comments">אף אחד עוד לא התייעץ על הפוסט הזה. תהיו ראשונים.</p>';
   thread.scrollTop = thread.scrollHeight;
 }
 
 function showTopic(id) {
   openId = id;
+  history.replaceState(null, '', '#t=' + id);
   if (unsubComments) unsubComments();
   if (unsubChat) unsubChat();
   comments = [];
@@ -216,6 +296,7 @@ function showTopic(id) {
 
 function showList() {
   openId = null;
+  history.replaceState(null, '', location.pathname);
   if (unsubComments) unsubComments();
   if (unsubChat) unsubChat();
   unsubComments = unsubChat = null;
@@ -223,6 +304,20 @@ function showList() {
   $('#view-list').hidden = false;
   renderList();
   window.scrollTo(0, 0);
+}
+
+/* ─── שיתוף ושמירה ─── */
+function shareTopic(id) {
+  const t = topics.find((x) => x.id === id);
+  const url = location.origin + location.pathname + '#t=' + id;
+  if (navigator.share) {
+    navigator.share({ title: t.title, text: t.title + ' · נוער שדרות', url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(
+      () => toast('הקישור הועתק — שתפו איפה שבא לכם'),
+      () => toast(url)
+    );
+  }
 }
 
 /* ─── קליקים ─── */
@@ -234,14 +329,41 @@ document.addEventListener('click', (e) => {
     Store.toggleVote(voteBtn.dataset.vote, user.email);
     return;
   }
-  const leader = e.target.closest('[data-open]');
-  if (leader) { showTopic(leader.dataset.open); return; }
-  const card = e.target.closest('.topic');
-  if (card) showTopic(card.dataset.id);
+  const saveBtn = e.target.closest('[data-save]');
+  if (saveBtn) {
+    e.stopPropagation();
+    if (!requireLogin()) return;
+    const t = topics.find((x) => x.id === saveBtn.dataset.save);
+    Store.toggleSave(saveBtn.dataset.save, user.email, savedBy(t));
+    if (!savedBy(t)) toast('נשמר — תמצאו את זה בסינון "שמורים"');
+    return;
+  }
+  const shareBtn = e.target.closest('[data-share]');
+  if (shareBtn) {
+    e.stopPropagation();
+    shareTopic(shareBtn.dataset.share);
+    return;
+  }
+  const catChip = e.target.closest('[data-cat]');
+  if (catChip) {
+    filterCat = catChip.dataset.cat;
+    renderCatBar();
+    renderList();
+    return;
+  }
+  const opener = e.target.closest('[data-open], [data-open-post], [data-comments]');
+  if (opener) {
+    showTopic(opener.dataset.open || opener.dataset.openPost || opener.dataset.comments);
+    if (opener.dataset.comments) setTimeout(() => $('#commentInput').focus(), 350);
+  }
 });
 
 $('#backBtn').addEventListener('click', showList);
 $('#heroHow').addEventListener('click', () => $('#howCard').scrollIntoView({ behavior: 'smooth', block: 'center' }));
+$('#searchInput').addEventListener('input', (e) => {
+  searchQ = e.target.value.trim();
+  renderList();
+});
 
 document.querySelectorAll('.sort').forEach((b) =>
   b.addEventListener('click', () => {
@@ -262,14 +384,25 @@ $('#commentForm').addEventListener('submit', (e) => {
   $('#commentInput').value = '';
 });
 
-/* ─── נושא חדש (גם מנהלים פותחים) ─── */
+/* ─── פוסט חדש (נוער ומנהלים) ─── */
+function renderCatPick() {
+  $('#catPick').innerHTML = CATEGORIES.map(
+    (c) => `<button type="button" class="cat-chip ${c === newCat ? 'active' : ''}" data-pick="${c}">${c}</button>`
+  ).join('');
+  document.querySelectorAll('[data-pick]').forEach((b) =>
+    b.addEventListener('click', () => { newCat = b.dataset.pick; renderCatPick(); })
+  );
+}
 function openNewSheet() {
   if (!requireLogin()) return;
+  newCat = 'אחר';
+  renderCatPick();
   $('#backdrop').hidden = false;
   $('#newSheet').hidden = false;
   $('#newTitle').focus();
 }
 $('#heroNew').addEventListener('click', openNewSheet);
+$('#composerBtn').addEventListener('click', openNewSheet);
 $('#fab').addEventListener('click', openNewSheet);
 $('#backdrop').addEventListener('click', () => {
   $('#backdrop').hidden = true;
@@ -282,11 +415,13 @@ $('#newForm').addEventListener('submit', (e) => {
   Store.addTopic({
     title,
     body: $('#newBody').value.trim(),
+    category: newCat,
     authorName: user.name,
     authorEmail: user.email,
+    authorPhoto: user.photo || '',
     hood: 'שדרות',
   })
-    .then(() => toast('הנושא פורסם'))
+    .then(() => toast('הפוסט פורסם'))
     .catch(() => toast('הפרסום נכשל, נסו שוב'));
   $('#newForm').reset();
   $('#backdrop').hidden = true;
@@ -314,7 +449,6 @@ $('#chatForm').addEventListener('submit', async (e) => {
   await Store.addChat(openId, { role: 'bot', name: 'היועץ', text: answer });
 });
 
-/* יועץ בסיסי — מסכם את מה שכולם אמרו על הנושא */
 function localAdvisor(t, comments, chat, q) {
   const votes = votesOf(t);
   const pts = comments.slice(-4).map((c) => '- ' + c.author + ': "' + c.text + '"').join('\n');
@@ -337,14 +471,13 @@ function localAdvisor(t, comments, chat, q) {
   );
 }
 
-/* יועץ חכם — Claude API עם הקשר מלא */
 async function aiAdvisor(t, comments, chat, q) {
   const context =
-    'הנושא: ' + t.title + '\n' +
+    'הפוסט: ' + t.title + '\n' +
     (t.body ? 'תיאור: ' + t.body + '\n' : '') +
-    'סטטוס: ' + (t.status || 'חדש') + ' | הצבעות בעד: ' + votesOf(t) + '\n\n' +
+    'קטגוריה: ' + catOf(t) + ' | סטטוס: ' + (t.status || 'חדש') + ' | הצבעות בעד: ' + votesOf(t) + '\n\n' +
     'תגובות מהקהילה:\n' + (comments.map((c) => c.author + (isStaff(c.email) ? ' (יחידת הנוער)' : '') + ': ' + c.text).join('\n') || 'אין') + '\n\n' +
-    'התייעצויות קודמות על הנושא הזה:\n' +
+    'התייעצויות קודמות על הפוסט הזה:\n' +
     (chat.slice(-16).map((m) => (m.role === 'bot' ? 'היועץ' : m.name) + ': ' + m.text).join('\n') || 'אין') +
     '\n\nהשאלה החדשה של ' + user.name + ': ' + q;
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -361,7 +494,7 @@ async function aiAdvisor(t, comments, chat, q) {
       system:
         'אתה "היועץ" — יועץ חדשנות לבני נוער בשדרות שמקדמים רעיונות לשיפור העיר. ' +
         'ענה בעברית, קצר וענייני (עד 6 משפטים), בלי אימוג\'ים. ' +
-        'התבסס על ההקשר: התגובות וההתייעצויות של כל המשתמשים על הנושא הזה. ' +
+        'התבסס על ההקשר: התגובות וההתייעצויות של כל המשתמשים על הפוסט הזה. ' +
         'תן צעדים מעשיים וספציפיים לנוער מול עירייה, תקציבים וגיוס חברים. אל תמציא עובדות או התחייבויות של העירייה.',
       messages: [{ role: 'user', content: context }],
     }),
