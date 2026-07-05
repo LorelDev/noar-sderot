@@ -1,12 +1,12 @@
 /* נוער שדרות · Service Worker — התקנה כאפליקציה + עבודה ברשת חלשה */
-const CACHE = 'noar-v9';
+const CACHE = 'noar-v10';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=9',
-  './app.js?v=9',
-  './store.js?v=9',
-  './firebase-config.js?v=9',
+  './styles.css?v=10',
+  './app.js?v=10',
+  './store.js?v=10',
+  './firebase-config.js?v=10',
   './manifest.json',
   './icon.svg',
 ];

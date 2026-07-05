@@ -379,3 +379,9 @@ textarea{resize:none}
 @media(max-width:640px){.tbl .hide-m{display:none}}
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* מחיקה (דשבורד) */
+.btn-del{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--line);color:#c22733;display:grid;place-items:center;transition:.15s}
+.btn-del:hover{border-color:#c22733;background:rgba(230,57,70,.07)}
+.btn-del:active{transform:scale(.9)}
+.btn-del:disabled{opacity:.4;pointer-events:none}

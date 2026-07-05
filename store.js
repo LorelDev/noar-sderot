@@ -50,6 +50,17 @@ const Store = {
   setStatus(id, status) {
     return _topics().doc(id).update({ status });
   },
+  async deleteTopic(id) {
+    const ref = _topics().doc(id);
+    for (const sub of ['comments', 'chat']) {
+      const snap = await ref.collection(sub).get();
+      if (snap.empty) continue;
+      const batch = _db.batch();
+      snap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+    return ref.delete();
+  },
   toggleVote(id, email) {
     const ref = _topics().doc(id);
     return _db.runTransaction(async (tr) => {

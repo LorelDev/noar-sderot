@@ -103,6 +103,11 @@ function render() {
           ${STATUSES.map((s) => `<option ${s === (t.status || 'חדש') ? 'selected' : ''}>${s}</option>`).join('')}
         </select>
       </td>
+      <td>
+        <button class="btn-del" data-del="${t.id}" data-title="${esc(t.title)}" aria-label="מחיקת הסוגיה">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0-1 13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1L6 7m4 4v6m4-6v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </td>
     </tr>`
     )
     .join('');
@@ -111,6 +116,21 @@ function render() {
     sel.addEventListener('change', () => {
       Store.setStatus(sel.dataset.id, sel.value);
       toast('הסטטוס עודכן — מוצג עכשיו גם לנוער באתר');
+    })
+  );
+
+  document.querySelectorAll('#rows [data-del]').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const ok = confirm('למחוק את "' + btn.dataset.title + '"?\nהמחיקה כוללת את כל התגובות וההתייעצויות — ואי אפשר לבטל.');
+      if (!ok) return;
+      btn.disabled = true;
+      try {
+        await Store.deleteTopic(btn.dataset.del);
+        toast('הסוגיה נמחקה');
+      } catch {
+        btn.disabled = false;
+        toast('המחיקה נכשלה, נסו שוב');
+      }
     })
   );
 }
