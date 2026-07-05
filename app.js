@@ -9,6 +9,7 @@ let comments = [];
 let chat = [];
 let sortBy = 'hot';
 let filterCat = 'הכל';
+let statusFilter = '';
 let searchQ = '';
 let newCat = 'אחר';
 let unsubComments = null;
@@ -101,6 +102,7 @@ Store.onTopics((list) => {
   renderList();
   renderStats();
   renderLeaders();
+  renderStatusFlow();
   if (openId) renderTopicHead();
   if (!deepLinked && location.hash.startsWith('#t=')) {
     deepLinked = true;
@@ -149,6 +151,39 @@ function renderLeaders() {
     : '<p class="no-comments">ברגע שיהיו פוסטים — הם יופיעו כאן.</p>';
 }
 
+/* ─── זרימת סטטוסים חיה (לחיצה מסננת את הפיד) ─── */
+const STATUS_META = [
+  ['חדש', 'נפתח וממתין לצוות'],
+  ['בטיפול', 'יחידת הנוער על זה'],
+  ['אושר', 'יוצא לדרך'],
+  ['נדחה', 'עם הסבר, תמיד'],
+];
+function renderStatusFlow() {
+  const el = $('#statusFlow');
+  if (!el) return;
+  el.innerHTML =
+    STATUS_META.map(([s, d]) => {
+      const n = topics.filter((t) => (t.status || 'חדש') === s).length;
+      return `
+      <button class="status-row ${statusFilter === s ? 'active' : ''}" data-status="${s}">
+        <span class="status ${STATUS_COLORS[s]}">${s}</span>
+        <span class="status-desc">${d}</span>
+        <b class="status-count">${n}</b>
+      </button>`;
+    }).join('') +
+    `<p class="status-hint">${statusFilter ? 'לחיצה נוספת מבטלת את הסינון' : 'לחיצה על סטטוס מסננת את הפיד'}</p>`;
+}
+
+/* ─── הדגשת צעדים מתחלפת ─── */
+let stepIdx = 1;
+let stepPause = 0;
+setInterval(() => {
+  const steps = document.querySelectorAll('.step');
+  if (!steps.length || document.hidden || Date.now() < stepPause) return;
+  steps.forEach((s, i) => s.classList.toggle('lit', i === stepIdx));
+  stepIdx = (stepIdx + 1) % steps.length;
+}, 2400);
+
 /* ─── סרגל קטגוריות ─── */
 function renderCatBar() {
   const chips = ['הכל', ...CATEGORIES];
@@ -164,6 +199,7 @@ function visibleTopics() {
   if (filterCat === 'שלי') list = list.filter((t) => user && t.authorEmail === user.email);
   else if (filterCat === 'שמורים') list = list.filter((t) => savedBy(t));
   else if (filterCat !== 'הכל') list = list.filter((t) => catOf(t) === filterCat);
+  if (statusFilter) list = list.filter((t) => (t.status || 'חדש') === statusFilter);
   if (searchQ) list = list.filter((t) => (t.title + ' ' + (t.body || '') + ' ' + t.authorName).includes(searchQ));
   return list.sort((a, b) =>
     sortBy === 'hot' ? votesOf(b) - votesOf(a)
@@ -351,6 +387,20 @@ document.addEventListener('click', (e) => {
     renderList();
     return;
   }
+  const statusRow = e.target.closest('[data-status]');
+  if (statusRow) {
+    statusFilter = statusFilter === statusRow.dataset.status ? '' : statusRow.dataset.status;
+    renderStatusFlow();
+    renderList();
+    if (statusFilter) toast('הפיד מסונן: ' + statusFilter);
+    return;
+  }
+  const step = e.target.closest('.step');
+  if (step) {
+    stepPause = Date.now() + 9000;
+    document.querySelectorAll('.step').forEach((s) => s.classList.toggle('lit', s === step));
+    return;
+  }
   const opener = e.target.closest('[data-open], [data-open-post], [data-comments]');
   if (opener) {
     showTopic(opener.dataset.open || opener.dataset.openPost || opener.dataset.comments);
@@ -404,6 +454,7 @@ function openNewSheet() {
 $('#heroNew').addEventListener('click', openNewSheet);
 $('#composerBtn').addEventListener('click', openNewSheet);
 $('#fab').addEventListener('click', openNewSheet);
+$('#stepCta').addEventListener('click', openNewSheet);
 $('#backdrop').addEventListener('click', closeSheets);
 function closeSheets() {
   $('#backdrop').hidden = true;
