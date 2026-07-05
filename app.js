@@ -2,7 +2,7 @@
 const $ = (s) => document.querySelector(s);
 
 /* עדכון אוטומטי — כשעולה גרסה חדשה, הדף מרענן את עצמו */
-const APP_V = 8;
+const APP_V = 9;
 async function checkVersion() {
   try {
     const r = await fetch('version.json?ts=' + Date.now(), { cache: 'no-store' });
@@ -75,8 +75,33 @@ Store.onAuth((u) => {
   renderAuth();
   renderComposer();
   renderCatBar();
+  renderWelcome();
   renderList();
   if (openId) renderTopicHead();
+});
+
+/* ─── כרטיס פתיחה — רק למי שלא מחובר, נסגר לתמיד ─── */
+function renderWelcome() {
+  $('#welcomeCard').hidden = !!user || localStorage.getItem('noar-welcome-closed') === '1';
+}
+$('#welcomeX').addEventListener('click', () => {
+  localStorage.setItem('noar-welcome-closed', '1');
+  $('#welcomeCard').hidden = true;
+});
+$('#welcomeLogin').addEventListener('click', () => doLogin());
+
+/* ─── חיפוש מתקפל במובייל ─── */
+$('#searchWrap').addEventListener('click', () => {
+  const w = $('#searchWrap');
+  if (window.innerWidth <= 760 && !w.classList.contains('open')) {
+    w.classList.add('open');
+    setTimeout(() => $('#searchInput').focus(), 250);
+  }
+});
+$('#searchInput').addEventListener('blur', () => {
+  if (window.innerWidth <= 760 && !$('#searchInput').value.trim()) {
+    $('#searchWrap').classList.remove('open');
+  }
 });
 
 function renderAuth() {

@@ -84,6 +84,18 @@ textarea{resize:none}
 @media(min-width:1020px){.layout{grid-template-columns:minmax(0,1fr) 322px;align-items:start}}
 .feed,.detail-col{min-width:0}
 
+/* ═══ כרטיס פתיחה (מוצג רק למי שלא מחובר) ═══ */
+.welcome{position:relative;background:linear-gradient(135deg,rgba(43,57,144,.06),rgba(230,57,70,.05)),#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 18px;box-shadow:var(--shadow);margin-bottom:14px;text-align:center;animation:cardIn .4s ease}
+.welcome h2{font-family:var(--disp);font-size:21px;color:var(--navy);margin-bottom:4px}
+.welcome p{color:var(--muted);font-size:14px;margin-bottom:12px}
+.welcome-x{position:absolute;top:10px;inset-inline-start:10px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--faint);transition:.15s}
+.welcome-x:active{transform:scale(.9);background:var(--bg)}
+.welcome-steps{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--muted)}
+.welcome-steps b{color:#fff;background:var(--grad);width:20px;height:20px;border-radius:7px;display:inline-grid;place-items:center;font-size:11.5px;margin-inline-end:4px}
+.welcome-steps i{width:14px;height:1.5px;background:var(--line-strong)}
+.welcome .btn-primary{width:100%;font-size:14.5px;padding:12px}
+@media(min-width:761px){.welcome{display:none}}
+
 /* ═══ קומפוזר — כמו רשת חברתית ═══ */
 .composer{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 16px;box-shadow:var(--shadow);margin-bottom:14px}
 .composer-avatar{width:42px;height:42px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-weight:600;font-size:16px;flex-shrink:0;overflow:hidden}
@@ -275,16 +287,18 @@ textarea{resize:none}
   .user-name{display:none}
   .auth-area .btn-dash{display:none}
 
-  /* הירו הופך לפס נתונים קומפקטי */
-  .hero{padding:12px 14px 4px}
-  .hero-kicker,.hero h1,.hero-sub,.hero-actions{display:none}
-  .hero::after{display:none}
-  .stats{margin-top:0;justify-content:space-between;gap:8px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:11px 18px;box-shadow:var(--shadow)}
-  .stat b{font-size:22px}
-  .stat span{font-size:11px}
-  .stat-sep{height:30px}
+  /* בית של נער: פיד, כפתור פרסום — וזהו */
+  .hero{display:none}
+  .side{display:none}
+  .layout{padding:12px 12px calc(96px + env(safe-area-inset-bottom));gap:18px}
 
-  .layout{padding:10px 12px calc(96px + env(safe-area-inset-bottom));gap:18px}
+  /* חיפוש מתקפל לאייקון */
+  .search-wrap{flex:0 0 46px;max-width:46px;min-width:46px;overflow:hidden;transition:all .3s cubic-bezier(.2,.8,.3,1)}
+  .search-wrap svg{inset-inline-start:15px}
+  .search-wrap input{opacity:0}
+  .search-wrap.open{flex:1 1 100%;max-width:none}
+  .search-wrap.open input{opacity:1}
+  .feed-head{flex-wrap:nowrap}
   .post-inner{padding:14px 15px 10px}
   .post:active{transform:scale(.985)}
   .composer-input:active{transform:scale(.98)}
@@ -292,9 +306,6 @@ textarea{resize:none}
   .pact{font-size:12.5px;padding:10px 2px}
   .composer{padding:11px 13px}
   .feed-head{gap:8px}
-  .search-wrap{max-width:none}
-  .side{gap:14px}
-  .side-card:first-child{display:none}
 
   /* מסך פוסט — כמו דחיפת מסך באפליקציה */
   #view-topic{animation:pushIn .32s cubic-bezier(.2,.8,.25,1)}

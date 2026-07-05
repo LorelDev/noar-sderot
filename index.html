@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
 
@@ -70,6 +70,16 @@
   <main class="layout">
     <section class="feed">
 
+      <div class="welcome" id="welcomeCard" hidden>
+        <button class="welcome-x" id="welcomeX" aria-label="סגירה"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+        <h2>יש לך רעיון לשדרות?</h2>
+        <p>מפרסמים פוסט, הקהילה מצביעה, יחידת הנוער מטפלת.</p>
+        <div class="welcome-steps">
+          <span><b>1</b> מפרסמים</span><i></i><span><b>2</b> מצביעים</span><i></i><span><b>3</b> מטופל</span>
+        </div>
+        <button class="btn-primary" id="welcomeLogin">מתחברים עם Google ומתחילים</button>
+      </div>
+
       <div class="composer">
         <span class="composer-avatar" id="composerAvatar">?</span>
         <button class="composer-input" id="composerBtn">מה הרעיון שלך לשדרות?</button>
@@ -83,7 +93,7 @@
           <button class="sort" data-sort="new">חדש</button>
           <button class="sort" data-sort="talked">מדובר</button>
         </div>
-        <div class="search-wrap">
+        <div class="search-wrap" id="searchWrap">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <input type="search" id="searchInput" placeholder="חיפוש בפוסטים..." autocomplete="off">
         </div>
@@ -216,9 +226,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js?v=8"></script>
-<script src="store.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="firebase-config.js?v=9"></script>
+<script src="store.js?v=9"></script>
+<script src="app.js?v=9"></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");</script>
 </body>
 </html>
