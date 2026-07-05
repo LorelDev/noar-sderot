@@ -2,7 +2,7 @@
 const $ = (s) => document.querySelector(s);
 
 /* עדכון אוטומטי — כשעולה גרסה חדשה, הדף מרענן את עצמו */
-const APP_V = 10;
+const APP_V = 11;
 async function checkVersion() {
   try {
     const r = await fetch('version.json?ts=' + Date.now(), { cache: 'no-store' });

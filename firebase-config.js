@@ -15,6 +15,7 @@ const FIREBASE_CONFIG = {
 const ADMIN_EMAILS = [
   'teenovationsderot@gmail.com',
   'ori432777@gmail.com',
+  'ori13kraus@gmail.com',
 ];
 
 /* היועץ (צ'אט בוט) — מפתח Anthropic API הופך אותו ל-Claude אמיתי.
