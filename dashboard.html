@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#ffffff">
 <title>רעיונוער · דשבורד יחידת הנוער</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=11">
+<link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
 
@@ -16,7 +17,7 @@
   <header class="topbar">
     <div>
       <h1>דשבורד יחידת הנוער</h1>
-      <p class="sub">שדרות · מעקב נושאים, הצבעות והתייעצויות</p>
+      <p class="sub">רעיונוער · שדרות — ניהול, פיקוח ואנליטיקה</p>
     </div>
     <div class="auth-area" id="authArea"></div>
   </header>
@@ -24,33 +25,66 @@
   <div id="gate" class="gate" hidden></div>
 
   <div id="dashContent" hidden>
+
     <div class="kpis">
-      <div class="kpi"><b id="kTopics">0</b><span>נושאים פתוחים</span></div>
+      <div class="kpi"><b id="kTopics">0</b><span>סוגיות</span></div>
       <div class="kpi"><b id="kVotes">0</b><span>הצבעות בעד</span></div>
       <div class="kpi"><b id="kComments">0</b><span>תגובות</span></div>
       <div class="kpi"><b id="kChats">0</b><span>התייעצויות עם היועץ</span></div>
-      <div class="kpi"><b id="kWeek">0</b><span>נושאים חדשים השבוע</span></div>
+      <div class="kpi"><b id="kWeek">0</b><span>חדשות השבוע</span></div>
+      <div class="kpi"><b id="kUsers">0</b><span>משתתפים פעילים</span></div>
     </div>
 
-    <h2 class="dash-section">הנושאים המובילים בהצבעות</h2>
-    <div class="bars" id="bars"></div>
+    <div class="ana-grid">
+      <div class="side-card"><h3>מובילות בהצבעות</h3><div class="bars" id="bars"></div></div>
+      <div class="side-card"><h3>פילוח קטגוריות</h3><div class="bars" id="catBars"></div></div>
+      <div class="side-card"><h3>פילוח סטטוסים</h3><div class="bars" id="statusBars"></div></div>
+      <div class="side-card"><h3>פעילות · 14 ימים</h3><div class="spark" id="sparkChart"></div></div>
+      <div class="side-card"><h3>כותבים מובילים</h3><div id="topAuthors"></div></div>
+      <div class="side-card">
+        <h3>תגובות אחרונות · פיקוח</h3>
+        <div class="cmt-list" id="recentComments"><p class="no-comments">טוען...</p></div>
+      </div>
+    </div>
 
-    <h2 class="dash-section">כל הנושאים</h2>
+    <h2 class="dash-section">כל הסוגיות</h2>
+    <div class="toolbar">
+      <div class="search-wrap dash-search">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="search" id="dashSearch" placeholder="חיפוש סוגיה או כותב..." autocomplete="off">
+      </div>
+      <select id="fStatus"><option value="">כל הסטטוסים</option><option>חדש</option><option>בטיפול</option><option>אושר</option><option>נדחה</option></select>
+      <select id="fCat"><option value="">כל הקטגוריות</option></select>
+      <select id="fSort">
+        <option value="votes">הכי מוצבעות</option>
+        <option value="new">חדשות</option>
+        <option value="comments">הכי מדוברות</option>
+        <option value="chats">הכי מיועצות</option>
+      </select>
+      <button class="btn-ghost btn-csv" id="csvBtn">ייצוא CSV</button>
+    </div>
+
     <div style="overflow-x:auto">
       <table class="tbl">
         <thead>
           <tr>
-            <th>נושא</th>
+            <th>סוגיה</th>
             <th>הצבעות</th>
             <th class="hide-m">תגובות</th>
             <th class="hide-m">התייעצויות</th>
             <th>סטטוס</th>
-            <th></th>
+            <th>פעולות</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
+  </div>
+
+  <div class="backdrop" id="dashBackdrop" hidden></div>
+  <div class="sheet" id="dashModal" hidden>
+    <div class="sheet-handle"></div>
+    <div id="modalBody"></div>
   </div>
 
   <div class="toast" id="toast" hidden></div>
@@ -59,8 +93,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js?v=11"></script>
-<script src="store.js?v=11"></script>
-<script src="dashboard.js?v=11"></script>
+<script src="firebase-config.js?v=12"></script>
+<script src="store.js?v=12"></script>
+<script src="dashboard.js?v=12"></script>
 </body>
 </html>

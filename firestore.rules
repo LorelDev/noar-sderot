@@ -15,6 +15,11 @@ service cloud.firestore {
       ];
     }
 
+    // קריאת תגובות רוחבית (פיקוח בדשבורד) — התגובות ממילא ציבוריות
+    match /{path=**}/comments/{commentId} {
+      allow read: if true;
+    }
+
     match /topics/{topicId} {
       allow read: if true;
 

@@ -2,7 +2,7 @@
 const $ = (s) => document.querySelector(s);
 
 /* עדכון אוטומטי — כשעולה גרסה חדשה, הדף מרענן את עצמו */
-const APP_V = 11;
+const APP_V = 12;
 async function checkVersion() {
   try {
     const r = await fetch('version.json?ts=' + Date.now(), { cache: 'no-store' });
@@ -246,10 +246,12 @@ function visibleTopics() {
   else if (filterCat !== 'הכל') list = list.filter((t) => catOf(t) === filterCat);
   if (statusFilter) list = list.filter((t) => (t.status || 'חדש') === statusFilter);
   if (searchQ) list = list.filter((t) => (t.title + ' ' + (t.body || '') + ' ' + t.authorName).includes(searchQ));
-  return list.sort((a, b) =>
-    sortBy === 'hot' ? votesOf(b) - votesOf(a)
-    : sortBy === 'talked' ? (b.commentsCount || 0) - (a.commentsCount || 0)
-    : (b.createdAt || 0) - (a.createdAt || 0)
+  return list.sort(
+    (a, b) =>
+      (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
+      (sortBy === 'hot' ? votesOf(b) - votesOf(a)
+        : sortBy === 'talked' ? (b.commentsCount || 0) - (a.commentsCount || 0)
+        : (b.createdAt || 0) - (a.createdAt || 0))
   );
 }
 
@@ -265,7 +267,7 @@ function postHead(t) {
       ${avatarHtml(t)}
       <div class="post-who">
         <div class="post-name">${esc(t.authorName)} ${isStaff(t.authorEmail) ? officialTag : ''}</div>
-        <div class="post-sub">${relTime(t.createdAt)} · <span class="cat cat-${catOf(t)}">${catOf(t)}</span> · <span class="status ${STATUS_COLORS[t.status] || 'st-new'}">${esc(t.status || 'חדש')}</span></div>
+        <div class="post-sub">${t.pinned ? '<span class="pin-badge">נעוץ</span> · ' : ''}${relTime(t.createdAt)} · <span class="cat cat-${catOf(t)}">${catOf(t)}</span> · <span class="status ${STATUS_COLORS[t.status] || 'st-new'}">${esc(t.status || 'חדש')}</span></div>
       </div>
     </header>`;
 }

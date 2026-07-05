@@ -50,6 +50,19 @@ const Store = {
   setStatus(id, status) {
     return _topics().doc(id).update({ status });
   },
+  updateTopic(id, data) {
+    return _topics().doc(id).update(data);
+  },
+  onRecentComments(cb) {
+    return _db.collectionGroup('comments').orderBy('createdAt', 'desc').limit(20)
+      .onSnapshot((s) =>
+        cb(s.docs.map((d) => ({ id: d.id, topicId: d.ref.parent.parent.id, ...d.data() })))
+      );
+  },
+  deleteComment(topicId, commentId) {
+    _topics().doc(topicId).update({ commentsCount: firebase.firestore.FieldValue.increment(-1) });
+    return _topics().doc(topicId).collection('comments').doc(commentId).delete();
+  },
   async deleteTopic(id) {
     const ref = _topics().doc(id);
     for (const sub of ['comments', 'chat']) {
