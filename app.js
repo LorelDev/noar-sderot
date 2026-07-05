@@ -1,5 +1,25 @@
-/* נוער שדרות · הרשת החברתית של הרעיונות */
+/* רעיונוער · הרשת החברתית של הרעיונות */
 const $ = (s) => document.querySelector(s);
+
+/* עדכון אוטומטי — כשעולה גרסה חדשה, הדף מרענן את עצמו */
+const APP_V = 8;
+async function checkVersion() {
+  try {
+    const r = await fetch('version.json?ts=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    const last = +sessionStorage.getItem('noar-reloaded') || 0;
+    if (j.v > APP_V && Date.now() - last > 60000) {
+      sessionStorage.setItem('noar-reloaded', Date.now());
+      location.reload();
+    }
+  } catch { /* אין רשת — לא נורא */ }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
+setInterval(checkVersion, 90000);
+checkVersion();
+
+/* רטט עדין באנדרואיד — תחושת אפליקציה */
+const buzz = () => { if (navigator.vibrate) navigator.vibrate(8); };
 
 let user = null;
 let isAdmin = false;
@@ -237,8 +257,11 @@ function actionsBar(t) {
     </footer>`;
 }
 
-function renderList() {
+let firstRender = true;
+function renderList(animate) {
   if (!loaded) return;
+  $('#topicList').classList.toggle('animate', !!animate || firstRender);
+  firstRender = false;
   const list = visibleTopics();
   $('#topicList').innerHTML = list.length
     ? list
@@ -347,7 +370,7 @@ function shareTopic(id) {
   const t = topics.find((x) => x.id === id);
   const url = location.origin + location.pathname + '#t=' + id;
   if (navigator.share) {
-    navigator.share({ title: t.title, text: t.title + ' · נוער שדרות', url }).catch(() => {});
+    navigator.share({ title: t.title, text: t.title + ' · רעיונוער', url }).catch(() => {});
   } else {
     navigator.clipboard.writeText(url).then(
       () => toast('הקישור הועתק — שתפו איפה שבא לכם'),
@@ -362,6 +385,7 @@ document.addEventListener('click', (e) => {
   if (voteBtn) {
     e.stopPropagation();
     if (!requireLogin()) return;
+    buzz();
     Store.toggleVote(voteBtn.dataset.vote, user.email);
     return;
   }
@@ -382,16 +406,18 @@ document.addEventListener('click', (e) => {
   }
   const catChip = e.target.closest('[data-cat]');
   if (catChip) {
+    buzz();
     filterCat = catChip.dataset.cat;
     renderCatBar();
-    renderList();
+    renderList(true);
     return;
   }
   const statusRow = e.target.closest('[data-status]');
   if (statusRow) {
+    buzz();
     statusFilter = statusFilter === statusRow.dataset.status ? '' : statusRow.dataset.status;
     renderStatusFlow();
-    renderList();
+    renderList(true);
     if (statusFilter) toast('הפיד מסונן: ' + statusFilter);
     return;
   }
@@ -412,7 +438,7 @@ $('#backBtn').addEventListener('click', showList);
 $('#heroHow').addEventListener('click', () => $('#howCard').scrollIntoView({ behavior: 'smooth', block: 'center' }));
 $('#searchInput').addEventListener('input', (e) => {
   searchQ = e.target.value.trim();
-  renderList();
+  renderList(true);
 });
 
 document.querySelectorAll('.sort').forEach((b) =>
@@ -420,7 +446,7 @@ document.querySelectorAll('.sort').forEach((b) =>
     document.querySelectorAll('.sort').forEach((x) => x.classList.remove('active'));
     b.classList.add('active');
     sortBy = b.dataset.sort;
-    renderList();
+    renderList(true);
   })
 );
 
@@ -471,6 +497,7 @@ function setTab(name) {
 document.querySelectorAll('.tabbtn').forEach((btn) =>
   btn.addEventListener('click', () => {
     const tab = btn.dataset.tab;
+    buzz();
     if (tab === 'new') { openNewSheet(); return; }
     if (tab === 'profile') { openProfile(); return; }
     closeSheets();
@@ -480,7 +507,7 @@ document.querySelectorAll('.tabbtn').forEach((btn) =>
     setTab(tab);
     renderCatBar();
     if (openId) showList();
-    else { renderList(); window.scrollTo({ top: 0, behavior: 'instant' }); }
+    else { renderList(true); window.scrollTo({ top: 0, behavior: 'instant' }); }
   })
 );
 

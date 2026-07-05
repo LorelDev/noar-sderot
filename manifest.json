@@ -1,7 +1,7 @@
 {
-  "name": "נוער שדרות",
-  "short_name": "נוער שדרות",
-  "description": "הרשת החברתית של הרעיונות — נוער שדרות",
+  "name": "רעיונוער",
+  "short_name": "רעיונוער",
+  "description": "רעיונוער — הרשת החברתית של הרעיונות של הנוער בשדרות",
   "start_url": "./index.html",
   "display": "standalone",
   "dir": "rtl",
